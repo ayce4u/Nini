@@ -1,0 +1,82 @@
+# Construit l'app iPhone et l'envoie sur TestFlight (puis App Store) — lancé à la main.
+# Il faut un compte Apple Developer (99 $/an). Secrets à créer dans GitHub :
+#   APPLE_TEAM_ID          : identifiant d'équipe (developer.apple.com → Membership)
+#   ASC_KEY_ID             : identifiant de la clé API App Store Connect
+#   ASC_ISSUER_ID          : « Issuer ID » affiché au-dessus des clés API
+#   ASC_KEY_P8             : contenu du fichier .p8 de la clé (rôle « App Manager »)
+#   NATIVE_API_URL         : adresse publique de l'API, ex. https://nini.ml/api
+name: App iPhone (TestFlight)
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: Numéro de build (doit augmenter à chaque envoi)
+        required: true
+        default: '1'
+
+jobs:
+  ios:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+
+      - name: Adresse de l'API pour l'app iPhone
+        env:
+          NATIVE_API_URL: ${{ secrets.NATIVE_API_URL }}
+        run: |
+          if [ -n "$NATIVE_API_URL" ]; then
+            sed -i '' "s#nativeApiUrl: '.*'#nativeApiUrl: '$NATIVE_API_URL'#" src/environments/environment.production.ts
+          fi
+
+      - name: Construire le site et le copier dans le projet iPhone
+        run: npx ng build && npx cap sync ios
+
+      - name: Clé App Store Connect
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          mkdir -p ~/private_keys
+          echo "$ASC_KEY_P8" > ~/private_keys/AuthKey.p8
+
+      - name: Archiver (signature automatique)
+        working-directory: frontend/ios/App
+        run: |
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Nini.xcarchive" \
+            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION="${{ inputs.build_number }}" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey.p8 \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}" \
+            archive
+
+      - name: Envoyer sur TestFlight
+        working-directory: frontend/ios/App
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>signingStyle</key><string>automatic</string>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Nini.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey.p8 \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}"

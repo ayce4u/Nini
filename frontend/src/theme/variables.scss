@@ -1,0 +1,96 @@
+// Chargé APRÈS styles.scss (voir angular.json) pour remplacer les couleurs par défaut d'Ionic.
+// Couleurs de Ɲini : orange terre cuite (la chaleur de Bamako), vert (la confiance),
+// encre presque noire et fond crème. Toutes les pages utilisent ces variables.
+@use '@fontsource-variable/plus-jakarta-sans';
+
+:root {
+  --ion-font-family: 'Plus Jakarta Sans Variable', -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --ion-color-primary: #e8762b;
+  --ion-color-primary-rgb: 232, 118, 43;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #cc6826;
+  --ion-color-primary-tint: #ea8440;
+
+  --ion-color-secondary: #1f9d6b;
+  --ion-color-secondary-rgb: 31, 157, 107;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #1b8a5e;
+  --ion-color-secondary-tint: #35a77a;
+
+  --ion-color-tertiary: #3d5a80;
+  --ion-color-tertiary-rgb: 61, 90, 128;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #364f71;
+  --ion-color-tertiary-tint: #506a8d;
+
+  --ion-color-success: #1f9d6b;
+  --ion-color-success-rgb: 31, 157, 107;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #1b8a5e;
+  --ion-color-success-tint: #35a77a;
+
+  --ion-color-warning: #e0a100;
+  --ion-color-warning-rgb: 224, 161, 0;
+  --ion-color-warning-contrast: #1d1a16;
+  --ion-color-warning-contrast-rgb: 29, 26, 22;
+  --ion-color-warning-shade: #c58e00;
+  --ion-color-warning-tint: #e3aa1a;
+
+  --ion-color-danger: #d64545;
+  --ion-color-danger-rgb: 214, 69, 69;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #bc3d3d;
+  --ion-color-danger-tint: #da5858;
+
+  --ion-color-dark: #1d1a16;
+  --ion-color-dark-rgb: 29, 26, 22;
+  --ion-color-dark-contrast: #ffffff;
+  --ion-color-dark-contrast-rgb: 255, 255, 255;
+  --ion-color-dark-shade: #1a1713;
+  --ion-color-dark-tint: #34312d;
+
+  --ion-color-medium: #6b6257;
+  --ion-color-medium-rgb: 107, 98, 87;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-contrast-rgb: 255, 255, 255;
+  --ion-color-medium-shade: #5e564d;
+  --ion-color-medium-tint: #7a7268;
+
+  --ion-color-light: #f3ece1;
+  --ion-color-light-rgb: 243, 236, 225;
+  --ion-color-light-contrast: #1d1a16;
+  --ion-color-light-contrast-rgb: 29, 26, 22;
+  --ion-color-light-shade: #d6d0c6;
+  --ion-color-light-tint: #f4eee4;
+
+  --ion-background-color: #fbf7f0;
+  --ion-background-color-rgb: 251, 247, 240;
+  --ion-text-color: #1d1a16;
+  --ion-text-color-rgb: 29, 26, 22;
+  --ion-toolbar-background: #fbf7f0;
+  --ion-tab-bar-background: #ffffff;
+  --ion-tab-bar-color: #8a8075;
+  --ion-tab-bar-color-selected: #e8762b;
+  --ion-item-background: transparent;
+  --ion-card-background: #ffffff;
+  --ion-border-color: #ece4d8;
+
+  // Valeurs propres à Ɲini
+  --nini-ink: #1d1a16;
+  --nini-muted: #6b6257;
+  --nini-surface: #ffffff;
+  --nini-cream: #fbf7f0;
+  --nini-sand: #f3ece1;
+  --nini-line: #ece4d8;
+  --nini-radius: 18px;
+  --nini-radius-sm: 12px;
+  --nini-shadow: 0 1px 2px rgba(29, 26, 22, 0.06), 0 6px 20px rgba(29, 26, 22, 0.06);
+  --nini-shadow-lg: 0 12px 40px rgba(29, 26, 22, 0.14);
+  --nini-gradient: linear-gradient(135deg, #e8762b 0%, #f2a65a 100%);
+}

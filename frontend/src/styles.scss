@@ -1,0 +1,254 @@
+// Styles de base d'Ionic
+@import '@ionic/angular/css/core.css';
+@import '@ionic/angular/css/normalize.css';
+@import '@ionic/angular/css/structure.css';
+@import '@ionic/angular/css/typography.css';
+@import '@ionic/angular/css/padding.css';
+@import '@ionic/angular/css/flex-utils.css';
+@import '@ionic/angular/css/text-alignment.css';
+@import '@ionic/angular/css/display.css';
+
+// ---------- Éléments communs à toutes les pages ----------
+
+html,
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
+ion-toolbar {
+  --border-width: 0 !important;
+  --padding-start: 12px;
+  --padding-end: 12px;
+}
+
+ion-title {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+ion-button {
+  --border-radius: 14px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  min-height: 48px;
+}
+
+ion-button[size='small'] {
+  min-height: 34px;
+  --border-radius: 10px;
+}
+
+ion-searchbar {
+  --border-radius: 14px !important;
+  --box-shadow: none !important;
+  --background: #ffffff !important;
+}
+
+ion-segment {
+  --background: var(--nini-sand);
+  border-radius: 14px;
+  padding: 3px;
+}
+
+ion-segment-button {
+  --indicator-color: #ffffff;
+  --color-checked: var(--nini-ink);
+  --border-radius: 11px;
+  --indicator-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  min-height: 38px;
+}
+
+ion-tab-bar {
+  --border: 1px solid var(--nini-line);
+  height: 64px;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+ion-tab-button {
+  font-weight: 600;
+  font-size: 11px;
+}
+
+ion-input.nini-input,
+ion-textarea.nini-input,
+ion-select.nini-input {
+  --background: #ffffff;
+  --border-radius: 14px;
+  --border-color: var(--nini-line);
+  --highlight-color-focused: var(--ion-color-primary);
+  --padding-start: 14px;
+  --padding-end: 14px;
+  margin-bottom: 14px;
+}
+
+// Conteneur centré : confortable sur téléphone et sur un grand écran d'ordinateur.
+.page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.page-narrow {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.card {
+  background: var(--nini-surface);
+  border-radius: var(--nini-radius);
+  box-shadow: var(--nini-shadow);
+  padding: 16px;
+}
+
+.section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 24px 4px 12px;
+
+  h2 {
+    font-size: 19px;
+    margin: 0;
+  }
+
+  a,
+  button {
+    color: var(--ion-color-primary);
+    font-weight: 700;
+    font-size: 14px;
+    background: none;
+    cursor: pointer;
+    text-decoration: none;
+  }
+}
+
+.muted {
+  color: var(--nini-muted);
+}
+
+.small {
+  font-size: 13px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--nini-sand);
+  color: var(--nini-ink);
+
+  &.success {
+    background: rgba(31, 157, 107, 0.12);
+    color: #16774f;
+  }
+  &.warning {
+    background: rgba(224, 161, 0, 0.15);
+    color: #8a6300;
+  }
+  &.danger {
+    background: rgba(214, 69, 69, 0.12);
+    color: #a83232;
+  }
+  &.primary {
+    background: rgba(232, 118, 43, 0.12);
+    color: #b5561a;
+  }
+}
+
+.grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+
+  @media (min-width: 720px) {
+    &.two {
+      grid-template-columns: 1fr 1fr;
+    }
+    &.three {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+}
+
+.empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--nini-muted);
+
+  ion-icon {
+    font-size: 52px;
+    color: var(--ion-color-primary);
+    opacity: 0.8;
+    margin-bottom: 8px;
+  }
+
+  h3 {
+    color: var(--nini-ink);
+    margin: 8px 0 6px;
+  }
+}
+
+.form-label {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+  margin: 4px 2px 8px;
+}
+
+.sticky-footer {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--nini-cream) 70%, rgba(251, 247, 240, 0));
+}
+
+// Carte Leaflet : coins arrondis et marqueurs personnalisés
+.leaflet-container {
+  font-family: inherit;
+  border-radius: var(--nini-radius);
+  z-index: 0;
+}
+
+.nini-pin {
+  width: 34px;
+  height: 34px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--ion-color-primary);
+  border: 3px solid #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.nini-me {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #2f6fed;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 6px rgba(47, 111, 237, 0.2);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 14px;
+}
+
+// Une icône à côté d'un texte ne doit jamais rétrécir.
+ion-icon {
+  flex-shrink: 0;
+}

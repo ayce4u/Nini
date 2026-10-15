@@ -1,0 +1,17 @@
+# Uniquement sur ton ordinateur : ouvre les ports pour tester.
+# (Coolify n'utilise pas ce fichier : en production, c'est lui qui gère l'adresse du site.)
+services:
+  web:
+    ports:
+      - "8080:80"
+  api:
+    ports:
+      - "3000:3000"
+  db:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nini}
+    ports:
+      - "5432:5432"
+  redis:
+    ports:
+      - "6379:6379"

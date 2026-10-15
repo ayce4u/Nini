@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import bcrypt from 'bcryptjs';
 import { randomBytes } from 'node:crypto';
 import { User } from '../users/user.entity.js';
@@ -15,7 +15,7 @@ import { ProviderService } from '../providers/provider-service.entity.js';
 import { Category } from '../categories/category.entity.js';
 import { isValidPhone, normalizePhone } from '../common/phone.js';
 import { DEFAULT_CITY } from '../common/quartiers.js';
-import type { LoginDto, RegisterDto } from './auth.dto.js';
+import type { LoginDto, ProviderSignupDto, RegisterDto } from './auth.dto.js';
 import type { JwtPayload } from './auth.guard.js';
 
 export interface AuthResult {
@@ -81,64 +81,97 @@ export class AuthService {
         }),
       );
 
-      let providerId: string | null = null;
-      if (dto.role === 'provider' && dto.provider) {
-        const p = dto.provider;
-        const category = await tx
-          .getRepository(Category)
-          .findOneBy({ slug: p.categorySlug });
-        if (!category) throw new BadRequestException('Catégorie inconnue.');
-
-        let referredBy: string | null = null;
-        if (p.referralCode) {
-          const code = p.referralCode.trim().toUpperCase();
-          const sponsor = await tx
-            .getRepository(Provider)
-            .existsBy({ referralCode: code });
-          if (!sponsor)
-            throw new BadRequestException(
-              'Ce code de parrainage n’existe pas.',
-            );
-          referredBy = code;
-        }
-
-        const provider = await tx.getRepository(Provider).save(
-          tx.getRepository(Provider).create({
-            userId: user.id,
-            businessName: p.businessName.trim(),
-            categorySlug: category.slug,
-            description: p.description?.trim() ?? '',
-            quartier: dto.quartier ?? null,
-            city: DEFAULT_CITY,
-            landmark: p.landmark ?? null,
-            location: { type: 'Point', coordinates: [p.lng, p.lat] },
-            mobile: p.mobile ?? false,
-            whatsapp: p.whatsapp ? normalizePhone(p.whatsapp) : null,
-            referralCode: randomCode(),
-            referredBy,
-            calendarToken: randomBytes(16).toString('hex'),
-          }),
-        );
-        providerId = provider.id;
-
-        if (p.services?.length) {
-          await tx
-            .getRepository(ProviderService)
-            .save(
-              p.services.map((s, i) =>
-                tx
-                  .getRepository(ProviderService)
-                  .create({ ...s, providerId: provider.id, sortOrder: i }),
-              ),
-            );
-        }
-      }
+      const providerId =
+        dto.role === 'provider' && dto.provider
+          ? await this.createProvider(tx, user, dto.provider, dto.quartier)
+          : null;
 
       return {
         token: await this.sign(user, providerId),
         user: publicUser(user, providerId),
       };
     });
+  }
+
+  /** Un client existant ouvre sa page prestataire (même compte, même numéro). */
+  async becomeProvider(
+    userId: string,
+    dto: ProviderSignupDto,
+    quartier?: string,
+  ): Promise<AuthResult> {
+    return this.db.transaction(async (tx) => {
+      const user = await tx.getRepository(User).findOneByOrFail({ id: userId });
+      if (await tx.getRepository(Provider).existsBy({ userId })) {
+        throw new ConflictException('Tu as déjà une page prestataire.');
+      }
+      user.role = 'provider';
+      if (quartier) user.quartier = quartier;
+      await tx.getRepository(User).save(user);
+      const providerId = await this.createProvider(
+        tx,
+        user,
+        dto,
+        quartier ?? user.quartier ?? undefined,
+      );
+      return {
+        token: await this.sign(user, providerId),
+        user: publicUser(user, providerId),
+      };
+    });
+  }
+
+  private async createProvider(
+    tx: EntityManager,
+    user: User,
+    p: ProviderSignupDto,
+    quartier?: string,
+  ): Promise<string> {
+    const category = await tx
+      .getRepository(Category)
+      .findOneBy({ slug: p.categorySlug });
+    if (!category) throw new BadRequestException('Catégorie inconnue.');
+
+    let referredBy: string | null = null;
+    if (p.referralCode) {
+      const code = p.referralCode.trim().toUpperCase();
+      const sponsor = await tx
+        .getRepository(Provider)
+        .existsBy({ referralCode: code });
+      if (!sponsor)
+        throw new BadRequestException('Ce code de parrainage n’existe pas.');
+      referredBy = code;
+    }
+
+    const provider = await tx.getRepository(Provider).save(
+      tx.getRepository(Provider).create({
+        userId: user.id,
+        businessName: p.businessName.trim(),
+        categorySlug: category.slug,
+        description: p.description?.trim() ?? '',
+        quartier: quartier ?? null,
+        city: DEFAULT_CITY,
+        landmark: p.landmark ?? null,
+        location: { type: 'Point', coordinates: [p.lng, p.lat] },
+        mobile: p.mobile ?? false,
+        whatsapp: p.whatsapp ? normalizePhone(p.whatsapp) : null,
+        referralCode: randomCode(),
+        referredBy,
+        calendarToken: randomBytes(16).toString('hex'),
+      }),
+    );
+
+    if (p.services?.length) {
+      await tx
+        .getRepository(ProviderService)
+        .save(
+          p.services.map((s, i) =>
+            tx
+              .getRepository(ProviderService)
+              .create({ ...s, providerId: provider.id, sortOrder: i }),
+          ),
+        );
+    }
+    return provider.id;
   }
 
   async login(dto: LoginDto): Promise<AuthResult> {

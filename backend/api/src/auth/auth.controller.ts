@@ -1,9 +1,9 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Public } from '../common/roles.js';
+import { CurrentUser, Public, type AuthUser } from '../common/roles.js';
 import { AuthService } from './auth.service.js';
-import { LoginDto, RegisterDto } from './auth.dto.js';
+import { BecomeProviderDto, LoginDto, RegisterDto } from './auth.dto.js';
 
 @ApiTags('Connexion')
 @Controller('auth')
@@ -24,5 +24,15 @@ export class AuthController {
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.auth.login(dto);
+  }
+
+  /** Un client déjà inscrit crée sa page prestataire : il reçoit un nouveau jeton. */
+  @ApiBearerAuth()
+  @Post('become-provider')
+  becomeProvider(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: BecomeProviderDto,
+  ) {
+    return this.auth.becomeProvider(user.id, dto.provider, dto.quartier);
   }
 }

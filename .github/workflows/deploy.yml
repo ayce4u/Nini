@@ -1,0 +1,29 @@
+# Déploie Ɲini sur le VPS (Coolify) quand la CI est verte sur la branche main.
+# Secrets à créer dans GitHub (Settings → Secrets and variables → Actions) :
+#   COOLIFY_WEBHOOK : l'adresse « Deploy Webhook » de l'app dans Coolify
+#   COOLIFY_TOKEN   : un jeton API Coolify (Keys & Tokens → API tokens, droit « deploy »)
+name: Déploiement
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Demander à Coolify de déployer
+        env:
+          COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        run: |
+          if [ -z "$COOLIFY_WEBHOOK" ] || [ -z "$COOLIFY_TOKEN" ]; then
+            echo "::warning::Secrets COOLIFY_WEBHOOK et COOLIFY_TOKEN absents : déploiement ignoré (voir README)."
+            exit 0
+          fi
+          curl --fail-with-body -sS -X GET "$COOLIFY_WEBHOOK" -H "Authorization: Bearer $COOLIFY_TOKEN"
+          echo "Déploiement lancé sur Coolify."

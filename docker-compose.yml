@@ -1,0 +1,119 @@
+# Ɲini en production : c'est ce fichier que Coolify lit pour lancer l'app sur le VPS.
+# Les valeurs ${...} se règlent dans Coolify (onglet « Environment Variables »).
+name: nini
+
+services:
+  # Base de données PostgreSQL avec PostGIS (calcul des distances GPS).
+  db:
+    image: postgis/postgis:16-3.4-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nini
+      POSTGRES_USER: nini
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Choisis un mot de passe pour la base}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nini -d nini"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # File d'attente des notifications (WhatsApp, SMS, iPhone).
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # L'API (NestJS) : comptes, prestataires, rendez-vous, statistiques…
+  api:
+    build: ./backend/api
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgres://nini:${POSTGRES_PASSWORD}@db:5432/nini
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:?Choisis une longue phrase secrète}
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:8080}
+      PUBLIC_API_URL: ${PUBLIC_WEB_URL:-http://localhost:8080}/api
+      CORS_ORIGINS: ${PUBLIC_WEB_URL:-http://localhost:8080}
+      APP_NAME: ${APP_NAME:-Ɲini}
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - uploads:/data/uploads
+
+  # Le microservice des notifications : il lit la file Redis et envoie les messages.
+  notifications:
+    build: ./backend/notifications
+    restart: unless-stopped
+    depends_on:
+      redis: { condition: service_healthy }
+    environment:
+      REDIS_URL: redis://redis:6379
+      APP_NAME: ${APP_NAME:-Ɲini}
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:8080}
+      # Notifications iPhone (Apple Push) : à remplir quand le compte Apple Developer est prêt.
+      APNS_KEY: ${APNS_KEY:-}
+      APNS_KEY_ID: ${APNS_KEY_ID:-}
+      APNS_TEAM_ID: ${APNS_TEAM_ID:-}
+      APNS_BUNDLE_ID: ${APNS_BUNDLE_ID:-ml.nini.app}
+      APNS_PRODUCTION: ${APNS_PRODUCTION:-false}
+      # WhatsApp Cloud API (Meta) : facultatif.
+      WHATSAPP_TOKEN: ${WHATSAPP_TOKEN:-}
+      WHATSAPP_PHONE_ID: ${WHATSAPP_PHONE_ID:-}
+      WHATSAPP_TEMPLATE: ${WHATSAPP_TEMPLATE:-nini_notification}
+      # SMS Orange : facultatif.
+      ORANGE_CLIENT_ID: ${ORANGE_CLIENT_ID:-}
+      ORANGE_CLIENT_SECRET: ${ORANGE_CLIENT_SECRET:-}
+      ORANGE_SENDER: ${ORANGE_SENDER:-}
+      SMS_SENDER_NAME: ${SMS_SENDER_NAME:-Nini}
+
+  # Le site web (Angular + Ionic) servi par nginx, qui transmet /api/ à l'API.
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  # Sauvegarde chaque nuit à 2 h : la base de données et les photos. On garde 14 jours.
+  backup:
+    image: postgis/postgis:16-3.4-alpine
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - backups:/backups
+      - uploads:/uploads:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Sauvegardes : tous les jours à 2 h (heure de Bamako)."
+        while true; do
+          now=$$(date -u +%H%M)
+          if [ "$$now" = "0200" ]; then
+            stamp=$$(date -u +%Y-%m-%d)
+            pg_dump -h db -U nini -d nini -Fc -f /backups/nini-$$stamp.dump \
+              && tar -czf /backups/photos-$$stamp.tar.gz -C /uploads . \
+              && echo "Sauvegarde $$stamp terminée"
+            find /backups -type f -mtime +14 -delete
+            sleep 60
+          fi
+          sleep 30
+        done
+
+volumes:
+  db-data:
+  redis-data:
+  uploads:
+  backups:

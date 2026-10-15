@@ -149,3 +149,16 @@ export class RegisterDto {
   @Type(() => ProviderSignupDto)
   provider?: ProviderSignupDto;
 }
+
+export class BecomeProviderDto {
+  @ApiPropertyOptional({ example: 'ACI 2000' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  quartier?: string;
+
+  @ApiProperty({ type: ProviderSignupDto })
+  @ValidateNested()
+  @Type(() => ProviderSignupDto)
+  provider: ProviderSignupDto;
+}

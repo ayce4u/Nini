@@ -47,13 +47,11 @@ export class AppointmentsService {
   async book(user: AuthUser, dto: BookDto) {
     if (user.providerId === dto.providerId)
       throw new BadRequestException('Tu ne peux pas réserver chez toi-même.');
-    const service = await this.db
-      .getRepository(ProviderService)
-      .findOneBy({
-        id: dto.serviceId,
-        providerId: dto.providerId,
-        active: true,
-      });
+    const service = await this.db.getRepository(ProviderService).findOneBy({
+      id: dto.serviceId,
+      providerId: dto.providerId,
+      active: true,
+    });
     if (!service) throw new NotFoundException('Ce service n’est plus proposé.');
 
     const startsAt = new Date(dto.startsAt);
@@ -157,7 +155,7 @@ export class AppointmentsService {
     appt.status = 'cancelled';
     await repo.save(appt);
     await this.notifications.appointmentCancelled(appt, 'client');
-    return this.view(appt);
+    return this.one(user, id);
   }
 
   // ---------- Côté prestataire ----------
@@ -244,9 +242,7 @@ export class AppointmentsService {
       (status === 'completed' || status === 'no_show') &&
       appt.startsAt.getTime() > Date.now()
     ) {
-      throw new BadRequestException(
-        'Ce rendez-vous n’a pas encore commencé.',
-      );
+      throw new BadRequestException('Ce rendez-vous n’a pas encore commencé.');
     }
     if (
       status === 'confirmed' &&
@@ -271,17 +267,17 @@ export class AppointmentsService {
         await this.notifications.appointmentCancelled(appt, 'provider');
       if (status === 'completed') await this.notifications.askForReview(appt);
     }
-    return this.view(appt);
+    return this.view(
+      await repo.findOneOrFail({ where: { id }, relations: { client: true } }),
+    );
   }
 
   private async reviewedIds(ids: string[]): Promise<Set<string>> {
     if (!ids.length) return new Set();
-    const reviews = await this.db
-      .getRepository(Review)
-      .find({
-        where: { appointmentId: In(ids) },
-        select: { appointmentId: true },
-      });
+    const reviews = await this.db.getRepository(Review).find({
+      where: { appointmentId: In(ids) },
+      select: { appointmentId: true },
+    });
     return new Set(reviews.map((r) => r.appointmentId));
   }
 
