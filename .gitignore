@@ -1,0 +1,11 @@
+node_modules/
+dist/
+www/
+.angular/
+coverage/
+uploads/
+.env
+*.log
+.DS_Store
+ios/App/Pods/
+ios/App/App/public/
