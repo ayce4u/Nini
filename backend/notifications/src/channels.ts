@@ -65,9 +65,8 @@ export class ApplePushChannel implements Channel {
       req.on('data', (chunk) => (body += chunk));
       req.on('end', () => {
         client.close();
-        status === 200
-          ? resolve()
-          : reject(new Error(`Apple a répondu ${status} ${body}`));
+        if (status === 200) resolve();
+        else reject(new Error(`Apple a répondu ${status} ${body}`));
       });
       req.on('error', reject);
       req.end(payload);
